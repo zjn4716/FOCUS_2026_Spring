@@ -30,7 +30,7 @@ void Motor_PWM_Control(uint8_t speed);
 void Motor_Stop(void);
 void Delay_ms(uint32_t time);
 void PWM_Auto_Speed_Control(void);
-
+#define WHEEL_RESOLUTION 2496.0f
 
 #include "Encoder.h"
 
@@ -59,27 +59,36 @@ uint8_t ParseSpeedValue(char *cmd)
     
     return speed;
 }
-void  Motor_PWM(int target_speed ){
-       if(target_speed > current_speed)
-        {
-          
-            for(uint8_t s = current_speed + 1; s <= target_speed; s++)
-            {
-                Motor_PWM_Control(s);
-                Delay_ms(50);  
-            }
-        }
-        else if(target_speed < current_speed)
-        {
-        
-            for(uint8_t s = current_speed - 1; s >= target_speed; s--)
-            {
-                Motor_PWM_Control(s);
-                Delay_ms(50);
-            }
-        }
+
+
+static u32 systick_ms = 0; /* ???? */
+
+/* ???systick */
+void SysTick_Init(void) // 1??@72MHz
+{
+	SysTick_Config(SystemCoreClock / 1000);
 }
 
+/* SysTick?? */
+void SysTick_Handler(void)
+{
+	//static uint8_t motor_run_cnt=0;
+	systick_ms++;
+	//Motor_PWM_Control(target_speed);
+	//motor_run_cnt++;
+	//if(motor_run_cnt>=20)
+	//{
+		//motor_run_cnt=0;
+		//app_motor_run();//????????
+	//}
+				Serial_Printf("SP:%f\r\n",Encoder_Get()/WHEEL_RESOLUTION);
+}
+
+/* ???????? */
+u32 millis(void)
+{
+	return systick_ms;
+}
 
 
 void ProcessCommand(void)
@@ -95,11 +104,13 @@ void ProcessCommand(void)
         // ????,???????
         if(current_speed == 0)
         {
+					//target_speed = 30;
             Motor_PWM_Control(30);  // ??20%
 					Serial_SendString("OK\r\n");
         }
         else
         {
+					//target_speed= current_speed;
             Motor_PWM_Control(current_speed);
 					       
         }
@@ -116,13 +127,14 @@ void ProcessCommand(void)
     else if(strncmp(cmd, "SPEED", 5) == 0 || strncmp(cmd, "speed", 5) == 0)
     {
         uint8_t speed = ParseSpeedValue(cmd);
-        
+
         if(speed == 0xFF || speed > 100)
         {
             Serial_SendString("ERROR\r\n");
         }
         else
         {
+					 //target_speed= current_speed;
             Motor_PWM_Control(speed);
             Serial_SendString("OK\r\n");
         }
@@ -193,6 +205,7 @@ int main(void)
 {
 	//OLED_Init();
 	//OLED_ShowString(1, 1, "RxData:");
+	SysTick_Init();
 	 GPIO_Config();
     
 
@@ -284,7 +297,7 @@ void TIM_Config(void)
 
 void Motor_PWM_Control(uint8_t speed)
 {
-    if(speed > 100) speed = 100;
+    //if(speed > 100) speed = 100;
     current_speed = speed;
     
     if(speed > 0)

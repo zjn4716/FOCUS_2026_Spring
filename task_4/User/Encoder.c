@@ -31,6 +31,8 @@ void Encoder_Init(void)
 	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 	//Reset counter
 	TIM_SetCounter(TIM3, 0);
+
+
 	TIM_Cmd(TIM3, ENABLE);
 }
 
@@ -43,3 +45,4 @@ int16_t Encoder_Get(void)
 	TIM3->CNT=0;
 	return Encoder_TIM;
 }
+
